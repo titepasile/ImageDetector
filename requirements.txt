@@ -1,3 +1,5 @@
 ipykernel
 pyyaml
 python-dotenv
+Pillow>=10
+torch>=2
