@@ -1,0 +1,2 @@
+{"epoch": 0, "train/loss": 4.692460775375366, "train/patches": 4, "val/probe_error": 1.6390081644058228, "val/patches": 3}
+{"epoch": 1, "train/loss": 4.022932410240173, "train/patches": 4, "val/probe_error": 1.588148593902588, "val/patches": 3}

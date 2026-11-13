@@ -1,0 +1,8 @@
+{"sample_id": "synthetic-test_id-0", "group_id": "synthetic-test_id-0", "source_domain": "synthetic_fixture", "generator_family": "real", "target": 0, "score": 0.5214349031448364, "route": "fused"}
+{"sample_id": "synthetic-test_id-1", "group_id": "synthetic-test_id-1", "source_domain": "synthetic_fixture", "generator_family": "toy", "target": 1, "score": 0.5409060716629028, "route": "fused"}
+{"sample_id": "synthetic-test_id-2", "group_id": "synthetic-test_id-2", "source_domain": "synthetic_fixture", "generator_family": "real", "target": 0, "score": 0.5205819606781006, "route": "fused"}
+{"sample_id": "synthetic-test_id-3", "group_id": "synthetic-test_id-3", "source_domain": "synthetic_fixture", "generator_family": "toy", "target": 1, "score": 0.4918069839477539, "route": "global_only"}
+{"sample_id": "synthetic-test_id-4", "group_id": "synthetic-test_id-4", "source_domain": "synthetic_fixture", "generator_family": "real", "target": 0, "score": 0.522132933139801, "route": "fused"}
+{"sample_id": "synthetic-test_id-5", "group_id": "synthetic-test_id-5", "source_domain": "synthetic_fixture", "generator_family": "toy", "target": 1, "score": 0.5381028056144714, "route": "fused"}
+{"sample_id": "synthetic-test_id-6", "group_id": "synthetic-test_id-6", "source_domain": "synthetic_fixture", "generator_family": "real", "target": 0, "score": 0.5178358554840088, "route": "fused"}
+{"sample_id": "synthetic-test_id-7", "group_id": "synthetic-test_id-7", "source_domain": "synthetic_fixture", "generator_family": "toy", "target": 1, "score": 0.5348525047302246, "route": "fused"}

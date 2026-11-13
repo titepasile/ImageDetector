@@ -111,6 +111,64 @@ python -m scripts.inference   # Vorhersagen auf neuen Bildern
 
 Einstellungen (Lernrate, Batchgröße, Pfade usw.) werden in `configs/config.yaml` geändert, nicht im Code.
 
+## Bilder für PyTorch konvertieren
+
+Setze in `.env` den Pfad zum Rohdatensatz (relative Pfade beziehen sich auf den Projektordner):
+
+```dotenv
+DATA_DIR="/path/to/raw/images"
+```
+
+```bash
+python -m scripts.convert_images
+```
+
+Der Konverter durchsucht Unterordner und ZIP-Dateien. Alle von Pillow unterstützten
+Bildtypen werden mit EXIF-Ausrichtung in **128×128 RGB PNG** konvertiert. Die Größe
+wird ohne Zuschnitt angepasst; dabei kann sich das Seitenverhältnis verändern.
+Transparenz erhält einen weißen Hintergrund, Animationen verwenden das erste Bild.
+Die Quelldateien bleiben unverändert. ZIP-Dateien innerhalb anderer ZIP-Dateien
+werden nicht rekursiv geöffnet.
+
+Die Ausgabe liegt standardmäßig in `data/processed/`: WebDataset-kompatible
+`images-000000.tar`-Shards mit jeweils bis zu 10.000 Bildern und JSON-Quellmetadaten,
+`manifest.json` mit Zählwerten und `errors.jsonl` mit übersprungenen defekten Bildern
+oder unvollständigen Archiven. Ein nichtleeres Ausgabeverzeichnis wird nicht
+überschrieben. Wenn kein Bild konvertiert wurde, endet das Script mit Exit-Code 1.
+
+```bash
+python -m scripts.convert_images --output-dir data/processed-v2 --shard-size 1000
+```
+
+Split-ZIPs benötigen die vollständige `.zip` und alle gleichnamigen `.z01`, `.z02`,
+… Dateien im selben Ordner. Pro Split-Archiv wird temporär ein
+zusammengefügtes ZIP gespeichert; ausreichend freien Speicher einplanen und bei
+Bedarf `--temp-dir /path/to/scratch` angeben. `.part`-Downloads und einzelne
+`.z01` ohne finale `.zip` werden mit einer Warnung übersprungen.
+
+Streaming für das Training, ohne den gesamten Datensatz in RAM zu laden:
+
+```python
+from torch.utils.data import DataLoader
+from src.data.streaming import StreamingImageDataset
+
+dataset = StreamingImageDataset("data/processed")
+loader = DataLoader(dataset, batch_size=64, num_workers=2)
+for images, metadata in loader:
+    # Float32 [batch, 3, 128, 128], Wertebereich [0, 1]
+    # metadata["source"] enthält die ursprünglichen Pfade.
+    pass  # Hier Modelltraining und eigene Label-Zuordnung ergänzen.
+```
+
+Shards werden zwischen Workers und gegebenenfalls initialisierten PyTorch-DDP-Ranks
+aufgeteilt. Für paralleles Laden genügend Shards erzeugen. Der Reader liest
+sequenziell ohne Shuffle; Labels werden nicht aus Ordnernamen abgeleitet.
+Für DDP vor dem Dataset die Prozessgruppe initialisieren und gleiche Trainingsschritte
+pro Rank sicherstellen, da die Sample-Anzahl pro Rank unterschiedlich sein kann.
+Optional nimmt `StreamingImageDataset(..., transform=...)` einen PIL-Transform an.
+
+Tests: `python -m unittest discover -s tests -v`.
+
 ## Zusammenarbeit
 
 - Neue Abhängigkeit installiert? Sie in `requirements.txt` eintragen und committen.

@@ -1,0 +1,5 @@
+- experiment=smoke
+- model=dual_resolution
+- spectral=flow
+- epochs=1
+- pretrained_reference=outputs/final-flow-reference/best.pt

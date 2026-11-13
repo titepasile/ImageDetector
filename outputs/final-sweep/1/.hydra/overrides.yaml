@@ -1,0 +1,4 @@
+- experiment=smoke
+- model=dual_resolution
+- seed=17
+- epochs=1

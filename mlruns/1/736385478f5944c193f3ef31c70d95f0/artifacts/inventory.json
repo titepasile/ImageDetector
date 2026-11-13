@@ -1,0 +1,128 @@
+{
+  "train": [
+    {
+      "path": "/tmp/tmpyfsj7sdk/0.png",
+      "label": 0,
+      "split": "train",
+      "group_id": "0",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "c77a3362035c217eb3bf806b258f5124112888621d78b8ebb2118b57a7152498",
+      "sample_id": "c77a3362035c217eb3bf806b258f5124112888621d78b8ebb2118b57a7152498"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/1.png",
+      "label": 1,
+      "split": "train",
+      "group_id": "1",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "8589625e4f45a80d43b72d6a23e8b2138a9c1c9fdc01ce16508f12079736ae87",
+      "sample_id": "8589625e4f45a80d43b72d6a23e8b2138a9c1c9fdc01ce16508f12079736ae87"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/2.png",
+      "label": 0,
+      "split": "train",
+      "group_id": "2",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "4f6b189c0a17ebbf7659a9fbcac837352610daed8dd951674a846ee98894dd3e",
+      "sample_id": "4f6b189c0a17ebbf7659a9fbcac837352610daed8dd951674a846ee98894dd3e"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/3.png",
+      "label": 1,
+      "split": "train",
+      "group_id": "3",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "9408965deee3e0243a6a94ee60486a0d7607263f113da5f5a5aa8ebb700d0f0a",
+      "sample_id": "9408965deee3e0243a6a94ee60486a0d7607263f113da5f5a5aa8ebb700d0f0a"
+    }
+  ],
+  "val_id": [
+    {
+      "path": "/tmp/tmpyfsj7sdk/4.png",
+      "label": 0,
+      "split": "val_id",
+      "group_id": "4",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "7b96034c4ba30857d61c3f1deca64fb92ed1ad602cbd4121bdf7839a882520d7",
+      "sample_id": "7b96034c4ba30857d61c3f1deca64fb92ed1ad602cbd4121bdf7839a882520d7"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/5.png",
+      "label": 1,
+      "split": "val_id",
+      "group_id": "5",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "9a091ddfce392a18e02603137dc8c3a7b369f794398cd674fcabb5c337f82749",
+      "sample_id": "9a091ddfce392a18e02603137dc8c3a7b369f794398cd674fcabb5c337f82749"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/6.png",
+      "label": 0,
+      "split": "val_id",
+      "group_id": "6",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "ae465142a3fdc2760d9091d273cc85b40e27c1f79d9749c16cf6b9c33568764b",
+      "sample_id": "ae465142a3fdc2760d9091d273cc85b40e27c1f79d9749c16cf6b9c33568764b"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/7.png",
+      "label": 1,
+      "split": "val_id",
+      "group_id": "7",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "763552ad0e389f57bc356b668e28c971dca8d8ad33b5de6a825653dca23f8d08",
+      "sample_id": "763552ad0e389f57bc356b668e28c971dca8d8ad33b5de6a825653dca23f8d08"
+    }
+  ],
+  "test_id": [
+    {
+      "path": "/tmp/tmpyfsj7sdk/8.png",
+      "label": 0,
+      "split": "test_id",
+      "group_id": "8",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "d3e52bfc1b7cb6037540c3f5216ad472fefed5b13a3a239f8ae90f9d843028c5",
+      "sample_id": "d3e52bfc1b7cb6037540c3f5216ad472fefed5b13a3a239f8ae90f9d843028c5"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/9.png",
+      "label": 1,
+      "split": "test_id",
+      "group_id": "9",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "7647b18ca8a54b7d8383c2be410adde5fa92f7e593e729d878166d220b8e1aee",
+      "sample_id": "7647b18ca8a54b7d8383c2be410adde5fa92f7e593e729d878166d220b8e1aee"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/10.png",
+      "label": 0,
+      "split": "test_id",
+      "group_id": "10",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "aa219765724127e7ef7e174fc7619313ffcc014996cd5794bcab0944b64bfcf2",
+      "sample_id": "aa219765724127e7ef7e174fc7619313ffcc014996cd5794bcab0944b64bfcf2"
+    },
+    {
+      "path": "/tmp/tmpyfsj7sdk/11.png",
+      "label": 1,
+      "split": "test_id",
+      "group_id": "11",
+      "source_domain": "camera",
+      "generator_family": "toy",
+      "sha256": "4d43a33440d30837b39f9028ba6684f462556b609f0a8edb6d686119fc2fb283",
+      "sample_id": "4d43a33440d30837b39f9028ba6684f462556b609f0a8edb6d686119fc2fb283"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+- experiment=smoke
+- spectral=flow
+- epochs=1

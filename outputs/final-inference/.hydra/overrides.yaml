@@ -1,0 +1,2 @@
+- checkpoint=outputs/final-sweep/1/best.pt
+- input=/tmp/image-detector-smoke.png

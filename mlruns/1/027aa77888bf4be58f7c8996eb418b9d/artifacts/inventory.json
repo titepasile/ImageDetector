@@ -1,0 +1,260 @@
+{
+  "train": [
+    {
+      "sample_id": "synthetic-train-0",
+      "group_id": "synthetic-train-0",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 17
+    },
+    {
+      "sample_id": "synthetic-train-1",
+      "group_id": "synthetic-train-1",
+      "split": "train",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 18
+    },
+    {
+      "sample_id": "synthetic-train-2",
+      "group_id": "synthetic-train-2",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 19
+    },
+    {
+      "sample_id": "synthetic-train-3",
+      "group_id": "synthetic-train-3",
+      "split": "train",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 20
+    },
+    {
+      "sample_id": "synthetic-train-4",
+      "group_id": "synthetic-train-4",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 21
+    },
+    {
+      "sample_id": "synthetic-train-5",
+      "group_id": "synthetic-train-5",
+      "split": "train",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 22
+    },
+    {
+      "sample_id": "synthetic-train-6",
+      "group_id": "synthetic-train-6",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 23
+    },
+    {
+      "sample_id": "synthetic-train-7",
+      "group_id": "synthetic-train-7",
+      "split": "train",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 24
+    },
+    {
+      "sample_id": "synthetic-train-8",
+      "group_id": "synthetic-train-8",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 25
+    },
+    {
+      "sample_id": "synthetic-train-9",
+      "group_id": "synthetic-train-9",
+      "split": "train",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 26
+    },
+    {
+      "sample_id": "synthetic-train-10",
+      "group_id": "synthetic-train-10",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 27
+    },
+    {
+      "sample_id": "synthetic-train-11",
+      "group_id": "synthetic-train-11",
+      "split": "train",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 28
+    }
+  ],
+  "val_id": [
+    {
+      "sample_id": "synthetic-val_id-0",
+      "group_id": "synthetic-val_id-0",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100017
+    },
+    {
+      "sample_id": "synthetic-val_id-1",
+      "group_id": "synthetic-val_id-1",
+      "split": "val_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 100018
+    },
+    {
+      "sample_id": "synthetic-val_id-2",
+      "group_id": "synthetic-val_id-2",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100019
+    },
+    {
+      "sample_id": "synthetic-val_id-3",
+      "group_id": "synthetic-val_id-3",
+      "split": "val_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 100020
+    },
+    {
+      "sample_id": "synthetic-val_id-4",
+      "group_id": "synthetic-val_id-4",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100021
+    },
+    {
+      "sample_id": "synthetic-val_id-5",
+      "group_id": "synthetic-val_id-5",
+      "split": "val_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 100022
+    },
+    {
+      "sample_id": "synthetic-val_id-6",
+      "group_id": "synthetic-val_id-6",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100023
+    },
+    {
+      "sample_id": "synthetic-val_id-7",
+      "group_id": "synthetic-val_id-7",
+      "split": "val_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 100024
+    }
+  ],
+  "test_id": [
+    {
+      "sample_id": "synthetic-test_id-0",
+      "group_id": "synthetic-test_id-0",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200017
+    },
+    {
+      "sample_id": "synthetic-test_id-1",
+      "group_id": "synthetic-test_id-1",
+      "split": "test_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 200018
+    },
+    {
+      "sample_id": "synthetic-test_id-2",
+      "group_id": "synthetic-test_id-2",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200019
+    },
+    {
+      "sample_id": "synthetic-test_id-3",
+      "group_id": "synthetic-test_id-3",
+      "split": "test_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 200020
+    },
+    {
+      "sample_id": "synthetic-test_id-4",
+      "group_id": "synthetic-test_id-4",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200021
+    },
+    {
+      "sample_id": "synthetic-test_id-5",
+      "group_id": "synthetic-test_id-5",
+      "split": "test_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 200022
+    },
+    {
+      "sample_id": "synthetic-test_id-6",
+      "group_id": "synthetic-test_id-6",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200023
+    },
+    {
+      "sample_id": "synthetic-test_id-7",
+      "group_id": "synthetic-test_id-7",
+      "split": "test_id",
+      "label": 1,
+      "source_domain": "synthetic_fixture",
+      "generator_family": "toy",
+      "image_seed": 200024
+    }
+  ]
+}

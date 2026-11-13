@@ -1,0 +1,134 @@
+{
+  "train": [
+    {
+      "sample_id": "synthetic-train-0",
+      "group_id": "synthetic-train-0",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 17
+    },
+    {
+      "sample_id": "synthetic-train-2",
+      "group_id": "synthetic-train-2",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 19
+    },
+    {
+      "sample_id": "synthetic-train-4",
+      "group_id": "synthetic-train-4",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 21
+    },
+    {
+      "sample_id": "synthetic-train-6",
+      "group_id": "synthetic-train-6",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 23
+    },
+    {
+      "sample_id": "synthetic-train-8",
+      "group_id": "synthetic-train-8",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 25
+    },
+    {
+      "sample_id": "synthetic-train-10",
+      "group_id": "synthetic-train-10",
+      "split": "train",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 27
+    }
+  ],
+  "val_id": [
+    {
+      "sample_id": "synthetic-val_id-0",
+      "group_id": "synthetic-val_id-0",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100017
+    },
+    {
+      "sample_id": "synthetic-val_id-2",
+      "group_id": "synthetic-val_id-2",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100019
+    },
+    {
+      "sample_id": "synthetic-val_id-4",
+      "group_id": "synthetic-val_id-4",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100021
+    },
+    {
+      "sample_id": "synthetic-val_id-6",
+      "group_id": "synthetic-val_id-6",
+      "split": "val_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 100023
+    }
+  ],
+  "test_id": [
+    {
+      "sample_id": "synthetic-test_id-0",
+      "group_id": "synthetic-test_id-0",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200017
+    },
+    {
+      "sample_id": "synthetic-test_id-2",
+      "group_id": "synthetic-test_id-2",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200019
+    },
+    {
+      "sample_id": "synthetic-test_id-4",
+      "group_id": "synthetic-test_id-4",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200021
+    },
+    {
+      "sample_id": "synthetic-test_id-6",
+      "group_id": "synthetic-test_id-6",
+      "split": "test_id",
+      "label": 0,
+      "source_domain": "synthetic_fixture",
+      "generator_family": null,
+      "image_seed": 200023
+    }
+  ]
+}

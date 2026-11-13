@@ -1,0 +1,51 @@
+model:
+  name: baseline
+  embedding_dim: 64
+  dropout: 0.1
+  encoder:
+    name: cnn
+    channels:
+    - 16
+    - 32
+    - 64
+data:
+  name: manifest
+  manifest: /tmp/tmpanj7d1re/samples.jsonl
+  train_split: train
+  val_split: val_id
+  test_split: test_id
+spectral:
+  objective: none
+task: train
+seed: 17
+deterministic: true
+device: cpu
+threads: 1
+epochs: 1
+resume: null
+pretrained_reference: null
+checkpoint: null
+input: null
+eval_split: null
+eval_manifest: null
+views:
+  global_size: 32
+  local_size: 32
+  patches: 1
+loader:
+  batch_size: 4
+  workers: 0
+optimizer:
+  lr: 0.001
+  weight_decay: 0.0001
+  clip_grad: 5.0
+loss:
+  global_aux: 0.2
+  local_aux: 0.1
+selection:
+  metric: macro_generator_auroc
+  mode: max
+  patience: 0
+tracking:
+  uri: sqlite:////tmp/tmpanj7d1re/mlflow.db
+  experiment: integration-tests

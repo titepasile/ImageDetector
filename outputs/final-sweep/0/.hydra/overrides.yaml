@@ -1,0 +1,4 @@
+- experiment=smoke
+- model=baseline
+- seed=17
+- epochs=1

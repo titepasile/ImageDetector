@@ -1,0 +1,1 @@
+{"path": "/tmp/image-detector-smoke.png", "sample_id": "61dfba0ce01ba7b3e4774923ab8638db5bdb61b50edf96150eb242a8753381b6", "score": 0.5309506058692932, "label": "generated", "threshold": 0.5, "calibrated": false, "route": "fused", "valid_patches": 1, "crop_boxes": [[16, 8, 32, 32]]}
