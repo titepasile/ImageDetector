@@ -1,15 +1,22 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from res_block import ResBlock
+from .res_block import ResBlock
 
 
 class ResNet(nn.Module):
-    def __init__(self, n_blocks_list, n_classes, base_channels):
+    def __init__(self, n_blocks_list, n_classes, base_channels, preserve_detail=False):
         super().__init__()
         self.init_conv = nn.Sequential(
-            nn.Conv2d(3, base_channels, kernel_size=7, padding=3, bias=False, stride=2),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(
+                3,
+                base_channels,
+                kernel_size=7,
+                padding=3,
+                bias=False,
+                stride=1 if preserve_detail else 2,
+            ),
+            nn.Identity() if preserve_detail else nn.MaxPool2d(3, stride=2, padding=1),
         )
 
         layers = []
@@ -24,6 +31,7 @@ class ResNet(nn.Module):
         self.bn = nn.BatchNorm2d(in_channels)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(in_channels, n_classes)
+        self.feature_dim = in_channels
 
     def _make_block(self, in_channels, out_channels, n_blocks, stride):
         layers = []
@@ -32,11 +40,13 @@ class ResNet(nn.Module):
             layers.append(ResBlock(out_channels, out_channels, stride=1))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward_features(self, x):
         z = self.init_conv(x)
         z = self.res_blocks(z)
         z = F.relu(self.bn(z))
         z = self.avgpool(z)
         z = torch.flatten(z, 1)
-        z = self.fc(z)
         return z
+
+    def forward(self, x):
+        return self.fc(self.forward_features(x))

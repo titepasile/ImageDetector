@@ -1,0 +1,9 @@
+# Integration fixtures only. Their metrics are not evidence of detector quality.
+name: synthetic
+train_split: train
+val_split: val_id
+test_split: test_id
+train_samples: 32
+val_samples: 16
+test_samples: 16
+image_size: 320

@@ -1,0 +1,7 @@
+defaults:
+  - dual_resolution
+
+freeze_global: true
+global_encoder:
+  name: imagenet_resnet18
+  pretrained: true

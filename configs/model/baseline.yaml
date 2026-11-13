@@ -1,0 +1,6 @@
+name: baseline
+embedding_dim: 64
+dropout: 0.1
+encoder:
+  name: cnn
+  channels: [16, 32, 64]

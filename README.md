@@ -1,10 +1,13 @@
 # ImageDetector
 
-Kurze Beschreibung des Projekts: *(hier eintragen, z. B. Ziel, Datensatz, Modellart)*
+Erkennung vollständig KI-generierter Bilder mit einer CNN-Referenz und einem
+Dual-Resolution-Detektor. Der zweite Ansatz kombiniert das gesamte Bild mit
+unskalierten lokalen Ausschnitten. Optionale lokale Referenzmodelle lernen auf
+realen Bildern spektrale Rekonstruktion oder Conditional Flow Matching.
 
 ## Voraussetzungen
 
-- **Python 3.12 oder 3.13** *(Version in der Gruppe abstimmen und hier festhalten; sehr neue Versionen wie 3.14 werden von ML-Bibliotheken oft noch nicht unterstützt)*
+- **Python 3.13** (mit 3.13.15 getestet)
 - **Git**
 - **VS Code** mit den Extensions *Python* und *Jupyter* (beide von Microsoft)
 
@@ -73,7 +76,8 @@ PYTHONPATH=.
 ### 7. Daten bereitstellen
 
 Datensätze liegen **nicht** im Repository. Lege sie lokal im Ordner `data/` ab.
-*(Hier eintragen: Woher bekommt man die Daten? Link, Netzlaufwerk, Download-Anleitung.)*
+Der Datensatz ist aktuell nicht enthalten. Die unten beschriebenen synthetischen
+Fixtures prüfen die Pipeline; ihre Ergebnisse messen keine reale Erkennungsleistung.
 
 ## Projektstruktur
 
@@ -99,17 +103,164 @@ ImageDetector/
 
 Die Scripts bleiben schlank, die eigentliche Logik liegt in `src/`.
 
-## Benutzung
+## Training und Experimente
 
 Alle Befehle im Projektordner und mit aktivierter `.venv` ausführen:
 
 ```bash
-python -m scripts.train       # Training starten
-python -m scripts.eval        # Modell evaluieren
-python -m scripts.inference   # Vorhersagen auf neuen Bildern
+# Ohne Datensatz: zwei CPU-Epochen auf kleinen, deterministischen Fixtures.
+python -m scripts.train experiment=smoke
+python -m scripts.train experiment=smoke model=dual_resolution
+
+# Vergleich mit drei Seeds; Hydra erzeugt für jede Kombination einen eigenen Lauf.
+python -m scripts.train --multirun experiment=smoke model=baseline,dual_resolution seed=17,29,43
 ```
 
-Einstellungen (Lernrate, Batchgröße, Pfade usw.) werden in `configs/config.yaml` geändert, nicht im Code.
+Hydra komponiert `configs/config.yaml` mit den Gruppen `model`, `data`, `spectral`
+und optional `experiment`. CLI-Overrides werden mitgespeichert. Neue Läufe erhalten
+eigene Verzeichnisse unter `outputs/`, Sweeps unter `multirun/`. Ein vorhandenes
+Experimentverzeichnis wird nicht überschrieben. `hydra.run.dir=outputs/mein-lauf`
+legt einen bekannten Ausgabeort fest; beim nächsten Lauf einen neuen Namen verwenden.
+
+| Einstellung | Verhalten |
+| --- | --- |
+| `model=baseline` | Drei einfache Conv/BatchNorm/ReLU-Stufen, Average Pooling und Klassifikationskopf; nur das gesamte Bild. |
+| `model=dual_resolution` | Zwei unabhängige Encoder auf Basis der vorhandenen ResNet-Implementierung, lokale Mittelwertbildung, Feature-Konkatenation und Klassifikationsköpfe. Beide Encoder starten ohne Vortraining. |
+| `model=dual_imagenet` | Gleiche Fusion, aber globaler torchvision ResNet-18 mit ImageNet-Gewichten; dieser Encoder bleibt zunächst eingefroren. Erstmaliges Training kann Gewichte herunterladen. |
+| `spectral=none` | Rein überwachter Detektor ohne spektrales Referenzmodell. |
+| `spectral=reconstruction` | Zusätzliche Fehlermerkmale eines separat vortrainierten Rekonstruktionsmodells. |
+| `spectral=flow` | Zusätzliche Fehlermerkmale eines separat vortrainierten Conditional-Flow-Matching-Modells. |
+
+Die Encoder verwenden explizite `nn.Module`-Klassen und den vorhandenen
+Residualblock. Der globale View erhält ein Letterboxing auf 224×224; lokale
+256×256-Patches werden ohne Skalierung ausgeschnitten. `views.patches=4` aktiviert
+vier Patches. Training verwendet reproduzierbare Zufallspositionen, Evaluation
+das Zentrum beziehungsweise die vier Ecken. Doppelte Positionen werden maskiert.
+Ist ein Bild zu klein, verwendet der Detektor den mittrainierten globalen Kopf.
+Die lokalen Encoder reduzieren die Auflösung nicht schon in der ersten Faltung.
+
+### Spektrale Referenzen vortrainieren
+
+Die Referenzen werden ausschließlich mit den realen Bildern des Trainingssplits
+trainiert. Die Kondition enthält nur tiefe Frequenzen, das Ziel ausschließlich
+den komplementären hochfrequenten Anteil. So kann das Modell das Ziel nicht aus
+einer unverdeckten Kopie im Konditionspfad ablesen.
+
+```bash
+python -m scripts.pretrain experiment=smoke spectral=reconstruction hydra.run.dir=outputs/reconstruction-ref
+python -m scripts.train experiment=smoke model=dual_resolution spectral=reconstruction pretrained_reference=outputs/reconstruction-ref/best.pt hydra.run.dir=outputs/reconstruction-detector
+
+python -m scripts.pretrain experiment=smoke spectral=flow hydra.run.dir=outputs/flow-ref
+python -m scripts.train experiment=smoke model=dual_resolution spectral=flow pretrained_reference=outputs/flow-ref/best.pt hydra.run.dir=outputs/flow-detector
+```
+
+Rekonstruktion minimiert den quadratischen Fehler des skalierten hochfrequenten
+Residuals. Flow Matching interpoliert zwischen projiziertem Gaußrauschen und diesem
+Residual und lernt das Geschwindigkeitsfeld `target - noise`. Zur Detektion werden
+pro Farbkanal deterministische Fehlermerkmale mit festen Noise-Probes bei
+`t = 0.25, 0.5, 0.75` berechnet. Das sind **keine Likelihoods**. Die Methode ist eine
+eigene Forschungsvariante und keine Reproduktion von SPAI. `SpectralReference.sample`
+bietet zusätzlich Euler-Sampling zur Inspektion; die Detektion braucht keine ODE-Lösung.
+
+Im Detektor bleibt die gesamte spektrale Referenz eingefroren. Ihre Merkmale werden
+mit den lokalen ResNet-Merkmalen kombiniert. Der globale und der lokale
+Klassifikationskopf erhalten Hilfsverluste (`loss.global_aux=0.2`, `loss.local_aux=0.1`).
+Die Referenz und der Detektor müssen dasselbe Dateninventar, dieselbe lokale
+Patchgröße und dieselbe Spektralkonfiguration verwenden. Auch bei real-only
+Vortraining deshalb dasselbe vollständige Manifest angeben. Dessen generierte
+Bilder werden beim Referenztraining herausgefiltert.
+
+### Echte Daten anschließen
+
+`data/samples.jsonl` enthält einen JSON-Datensatz pro Zeile. Pfade beziehen sich auf
+das Verzeichnis der Manifestdatei. Beispielzeilen (durch existierende Bilder ersetzen):
+
+```jsonl
+{"path":"raw/camera/image1.jpg","label":0,"split":"train","group_id":"photo-1","source_domain":"camera-collection-a"}
+{"path":"raw/generated/image2.png","label":1,"split":"train","group_id":"generation-2","source_domain":"generated-collection-a","generator_family":"generator-a"}
+{"path":"raw/camera/image3.jpg","label":0,"split":"val_id","group_id":"photo-3","source_domain":"camera-collection-b"}
+{"path":"raw/generated/image4.png","label":1,"split":"val_id","group_id":"generation-4","source_domain":"generated-collection-b","generator_family":"generator-b"}
+```
+
+Labels sind `0=real`, `1=generated`. Training und Validierung sind erforderlich;
+für eine abschließende Evaluation zusätzlich einen `test_id`-Split bereitstellen.
+Zusammengehörende Bilder und Varianten müssen dieselbe `group_id` erhalten.
+Die Pipeline prüft Gruppenüberschneidungen und identische Dateiinhalte zwischen
+Splits. Sie berechnet SHA-256 für jede Quelldatei, prüft optional angegebene
+`sha256`-Werte und protokolliert einen Inventar-Fingerprint. Das liest beim Start
+alle kodierten Dateien einmal, lädt aber nicht alle dekodierten Bilder in RAM.
+Near-Duplicate-Erkennung und die sachliche Prüfung der Herkunft bleiben Aufgaben
+der Datensatzvorbereitung; Labels werden niemals aus Dateinamen abgeleitet.
+
+```bash
+python -m scripts.train model=baseline data.manifest=/data/samples.jsonl
+python -m scripts.train model=dual_imagenet data.manifest=/data/samples.jsonl
+python -m scripts.pretrain spectral=flow data.manifest=/data/samples.jsonl
+
+# Für Generator-Generalisation einen wirklich getrennten Entwicklungssplit wählen.
+python -m scripts.train model=dual_resolution data.manifest=/data/samples.jsonl data.val_split=val_ood data.test_split=test_ood
+```
+
+Die Bilder werden direkt in ihrer vorhandenen Auflösung gelesen, EXIF-orientiert
+und nach RGB konvertiert; Transparenz wird auf Weiß gelegt. Bereits auf 128×128
+verkleinerte Daten liefern keine nativen 256×256-Patches. Der ältere Tar-Konverter
+unten bleibt für bestehende Anwendungen verfügbar; die neue Trainingspipeline
+verwendet native Bilddateien und das explizite Manifest.
+
+Detektortraining besucht jedes Bild einmal pro Epoche. Verlustgewichte gleichen Klassen,
+Generatorfamilien beziehungsweise reale Quelldomänen und Bildgruppen aus.
+Validierungsmetriken bleiben ungewichtet. Der Detektor wählt `best.pt` standardmäßig
+nach mittlerer AUROC pro Generatorfamilie; frühes Stoppen erfolgt nach drei Epochen
+ohne Verbesserung. Die spektrale Referenz wählt nach dem deterministischen
+Validierungs-Probe-Fehler. Rekonstruktionsqualität muss anschließend anhand der
+Detektorleistung überprüft werden. Alle Optimierer verwenden zunächst AdamW mit
+konstanter Lernrate; Hyperparameter stehen in Hydra-Konfigurationen.
+
+### MLflow und Reproduzierbarkeit
+
+Training, Vortraining, Evaluation und Inferenz erzeugen MLflow-Runs. Standardmäßig
+liegen SQLite-Trackingdaten und Artefakte lokal unter `logs/mlflow/`. Ein Server ist
+mit `tracking.uri=http://localhost:5000` wählbar. Die lokale Oberfläche startet mit:
+
+```bash
+mlflow ui --backend-store-uri sqlite:///logs/mlflow/mlflow.db
+```
+
+Jeder Trainingslauf speichert aufgelöste Konfiguration, Hydra-Overrides,
+Paketversionen, Quellcode-Snapshot mit Hash, Git-Revision/Dirty-Status, Dateninventar,
+Seed, Metriken sowie `best.pt` und `last.pt`. Checkpoints enthalten Modell,
+Optimierer und RNG-Zustände von Python, NumPy und PyTorch. Spektrale Gewichte sind
+im finalen Detektorcheckpoint enthalten; Evaluation und Inferenz laden keine
+externen Modellgewichte nach.
+
+```bash
+# Dieselbe Konfiguration wie beim ersten Lauf; epochs ist die gesamte Zielzahl.
+python -m scripts.train experiment=smoke epochs=4 resume=outputs/alter-lauf/last.pt
+python -m scripts.eval checkpoint=outputs/flow-detector/best.pt
+python -m scripts.inference checkpoint=outputs/flow-detector/best.pt input=/data/example.jpg
+```
+
+Fortsetzung erfolgt an Epochengrenzen in einem neuen, verknüpften MLflow-Run.
+`best.pt` muss neben `last.pt` liegen. Änderungen an Daten, Modell, relevanten
+Trainingsparametern oder am Quellcode werden bei exakter Fortsetzung abgewiesen.
+Die Tests prüfen bitgleiche CPU-Modellzustände nach Fortsetzung gegenüber einem
+ununterbrochenen Lauf. Gleiche Resultate über unterschiedliche Hardware- oder
+Bibliotheksversionen hinweg sind damit nicht zugesichert.
+
+Evaluation übernimmt Daten und Views aus dem Checkpoint. `eval_split=test_ood`
+wählt einen anderen vorhandenen Split; `eval_manifest=/data/external.jsonl`
+erlaubt ein externes Manifest, das nur den gewählten Split enthalten darf.
+Gespeichert werden AUROC, Average Precision, Balanced Accuracy, FPR/TPR bei 0.5,
+Coverage und Einzelvorhersagen. Inferenz akzeptiert eine Datei oder ein Verzeichnis
+und schreibt `predictions.jsonl` mit Score, unkalibriertem Label, gewähltem Zweig
+und Crop-Koordinaten. Fehlerhafte Dateien erhalten einen Fehlerdatensatz und führen
+zu einem nicht erfolgreichen Exit-Code.
+
+Noch nicht umgesetzt sind Wahrscheinlichkeitskalibrierung, automatische
+Familien-Split-Erstellung, Bootstrap-Konfidenzintervalle, DDP und DINO/CLIP-Adapter.
+Die getesteten ausführbaren Encoder sind das eigene CNN/ResNet und torchvision
+ResNet-18. Der vollständige Forschungsplan steht in
+[doc/implementation_proposal.md](doc/implementation_proposal.md).
 
 ## Bilder für PyTorch konvertieren
 

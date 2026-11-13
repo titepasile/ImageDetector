@@ -1,0 +1,55 @@
+defaults:
+  - model: baseline
+  - data: manifest
+  - spectral: none
+  - _self_
+  - experiment: null
+
+task: train
+seed: 17
+deterministic: true
+device: auto
+threads: 1
+epochs: 10
+resume: null
+pretrained_reference: null
+checkpoint: null
+input: null
+eval_split: null
+eval_manifest: null
+
+views:
+  global_size: 224
+  local_size: 256
+  patches: 1
+
+loader:
+  batch_size: 16
+  workers: 0
+
+optimizer:
+  lr: 0.001
+  weight_decay: 0.0001
+  clip_grad: 5.0
+
+loss:
+  global_aux: 0.2
+  local_aux: 0.1
+
+selection:
+  metric: macro_generator_auroc
+  mode: max
+  patience: 3
+
+tracking:
+  uri: null  # Local SQLite by default; override with an MLflow server URI.
+  experiment: image-detector
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S-%f}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S-%f}
+    subdir: ${hydra.job.num}

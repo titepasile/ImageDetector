@@ -1,0 +1,5 @@
+name: manifest
+manifest: data/samples.jsonl
+train_split: train
+val_split: val_id
+test_split: test_id

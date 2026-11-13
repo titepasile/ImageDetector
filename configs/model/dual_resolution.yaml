@@ -1,0 +1,15 @@
+name: dual_resolution
+embedding_dim: 128
+dropout: 0.1
+freeze_global: false
+freeze_local: false
+global_encoder:
+  name: resnet
+  base_channels: 16
+  blocks: [1, 1, 1]
+  preserve_detail: false
+local_encoder:
+  name: resnet
+  base_channels: 16
+  blocks: [1, 1, 1]
+  preserve_detail: true

@@ -1,0 +1,7 @@
+defaults:
+  - config
+  - override model: dual_resolution
+  - override spectral: reconstruction
+  - _self_
+
+task: pretrain
