@@ -1,0 +1,18 @@
+# @package _global_
+# GenImage ADM subset after format debiasing (scripts.prepare_genimage).
+# CPU settings for a 16-core laptop without CUDA.
+defaults:
+  - override /data: manifest
+
+device: cpu
+threads: 12
+epochs: 8
+data:
+  manifest: data/genimage_adm/samples.jsonl
+loader:
+  batch_size: 32
+  workers: 4
+selection:
+  patience: 3
+tracking:
+  experiment: image-detector-adm

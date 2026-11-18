@@ -170,6 +170,29 @@ Patchgröße und dieselbe Spektralkonfiguration verwenden. Auch bei real-only
 Vortraining deshalb dasselbe vollständige Manifest angeben. Dessen generierte
 Bilder werden beim Referenztraining herausgefiltert.
 
+### GenImage-Teilmenge (z. B. ADM) vorbereiten
+
+GenImage speichert generierte Bilder als 256×256-PNG und reale ImageNet-Bilder als
+JPEG unterschiedlicher Größe. Ein Detektor kann beide Klassen deshalb allein an
+Dateiformat, JPEG-Artefakten, Größe oder Seitenverhältnis trennen. Der Builder
+entfernt diese Abkürzungen: Reale Bilder werden einmal dekodiert und mittig auf
+256×256 zugeschnitten (8×8-JPEG-Raster bleibt ausgerichtet; Graustufen- und zu
+kleine Bilder werden übersprungen). Generierte Bilder werden einmal als JPEG mit
+Qualität und Chroma-Subsampling aus der Verteilung der realen Bilder desselben
+Splits komprimiert. Beide Klassen werden verlustfrei als PNG gespeichert.
+
+Split-ZIPs (`.z01` … `.zip`) werden direkt gelesen, ohne sie zusammenzufügen.
+`train` und `val_id` stammen disjunkt aus GenImage-`train/`, `test_id` aus GenImage-`val/`.
+
+```bash
+python -m scripts.prepare_genimage C:/data/ADM/imagenet_ai_0508_adm.zip data/genimage_adm --train 4000 --val 1000 --test 1000
+python -m scripts.train experiment=adm model=baseline hydra.run.dir=outputs/adm-baseline
+python -m scripts.eval experiment=adm checkpoint=outputs/adm-baseline/best.pt hydra.run.dir=outputs/adm-baseline-eval
+```
+
+Verbleibender Unterschied: Reale Bilder können mit anderen Quantisierungstabellen
+als den IJG-Standardtabellen von Pillow kodiert sein.
+
 ### Echte Daten anschließen
 
 `data/samples.jsonl` enthält einen JSON-Datensatz pro Zeile. Pfade beziehen sich auf
