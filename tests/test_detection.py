@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from hydra import compose, initialize_config_dir
+import mlflow
 from mlflow.tracking import MlflowClient
 import numpy as np
 from omegaconf import OmegaConf
@@ -186,12 +187,28 @@ class ViewAndModelTests(unittest.TestCase):
         self.assertIsNone(classification_metrics(predictions[:2])["auroc"])
 
 
+def release_mlflow_database(uri):
+    """Close MLflow's cached SQLite engine so Windows can delete the database file."""
+    mlflow.end_run()
+    try:
+        from mlflow.store.tracking.sqlalchemy_store import SqlAlchemyStore
+    except ImportError:
+        return
+    # MLflow keeps one engine per URI for the whole process (private API).
+    engine = getattr(SqlAlchemyStore, "_engine_map", {}).pop(uri, None)
+    if engine is not None:
+        engine.dispose()
+
+
 class ExperimentTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory()
+        # Cleanup errors are still ignored as a fallback for other open handles.
+        self.temporary = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.uri = f"sqlite:///{self.root / 'mlflow.db'}"
+        # Cleanups run in reverse order: release the database before deleting it.
+        self.addCleanup(release_mlflow_database, self.uri)
 
     def config(self, *overrides, pretrain=False):
         cfg = configuration(*overrides, pretrain=pretrain)
