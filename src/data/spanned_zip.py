@@ -15,33 +15,62 @@ import zipfile
 from .convert import normalize_split_end
 
 
-def split_volumes(path):
+class MissingVolumeError(OSError):
+    pass
+
+
+def declared_volumes(path):
+    """Total number of volumes recorded in the end records of the final .zip."""
+    with Path(path).open("rb") as stream:
+        stream.seek(0, 2)
+        size = stream.tell()
+        stream.seek(max(0, size - 65557))
+        tail = stream.read()
+    index = tail.rfind(b"PK\x05\x06")
+    if index < 0:
+        raise ValueError(f"No ZIP end record in {path}")
+    disk = struct.unpack_from("<4sH", tail, index)[1]
+    if index >= 20 and tail[index - 20 : index - 16] == b"PK\x06\x07":
+        return struct.unpack_from("<4sIQI", tail, index - 20)[3]
+    return disk + 1
+
+
+def split_volumes(path, allow_missing=False):
+    """Return volume paths in order. Missing volumes are returned as None if allowed."""
     path = Path(path)
-    parts = sorted(
-        (
-            p
-            for p in path.parent.iterdir()
-            if p.stem.lower() == path.stem.lower()
-            and re.fullmatch(r"\.z\d+", p.suffix.lower())
-        ),
-        key=lambda p: int(p.suffix[2:]),
-    )
-    numbers = [int(p.suffix[2:]) for p in parts]
-    if numbers != list(range(1, len(numbers) + 1)):
+    parts = {
+        int(p.suffix[2:]): p
+        for p in path.parent.iterdir()
+        if p.stem.lower() == path.stem.lower()
+        and re.fullmatch(r"\.z\d+", p.suffix.lower())
+    }
+    count = max(parts, default=0)
+    if allow_missing:
+        count = max(count, declared_volumes(path) - 1)
+    volumes = [parts.get(number) for number in range(1, count + 1)]
+    if None in volumes and not allow_missing:
         raise ValueError(f"Missing split ZIP volumes for {path}")
-    return [*parts, path]
+    return [*volumes, path]
 
 
 class SpannedFile(io.RawIOBase):
-    """Concatenated read-only view of several files with an in-memory write overlay."""
+    """Concatenated read-only view of several files with an in-memory write overlay.
+
+    A None path stands for a missing volume. Split volumes before the last one
+    share one fixed size, so later offsets stay correct; reading inside a missing
+    volume raises MissingVolumeError.
+    """
 
     def __init__(self, paths):
         super().__init__()
-        self.paths = [Path(p) for p in paths]
+        self.paths = [Path(p) if p is not None else None for p in paths]
+        present = [p.stat().st_size for p in self.paths[:-1] if p is not None]
+        if None in self.paths[:-1] and len(set(present)) != 1:
+            raise ValueError("Cannot infer the size of missing split volumes")
         self.offsets, total = [], 0
         for path in self.paths:
             self.offsets.append(total)
-            total += path.stat().st_size
+            total += path.stat().st_size if path is not None else present[0]
         self.size = total
         self.position = 0
         self.handles = [None] * len(self.paths)
@@ -65,6 +94,8 @@ class SpannedFile(io.RawIOBase):
         return self.position
 
     def _handle(self, index):
+        if self.paths[index] is None:
+            raise MissingVolumeError(f"Split ZIP volume {index + 1} is missing")
         if self.handles[index] is None:
             self.handles[index] = self.paths[index].open("rb")
         return self.handles[index]
@@ -117,9 +148,13 @@ class SpannedFile(io.RawIOBase):
 
 
 @contextmanager
-def open_spanned_zip(path):
-    """Open a split or single ZIP. Members can be read with archive.open()."""
-    volumes = split_volumes(path)
+def open_spanned_zip(path, allow_missing=False):
+    """Open a split or single ZIP. Members can be read with archive.open().
+
+    With allow_missing=True, members stored in absent volumes raise
+    MissingVolumeError when read; all other members remain readable.
+    """
+    volumes = split_volumes(path, allow_missing)
     if len(volumes) == 1:
         with zipfile.ZipFile(path) as archive:
             yield archive

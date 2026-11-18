@@ -23,7 +23,7 @@ import random
 
 from PIL import Image, JpegImagePlugin
 
-from .spanned_zip import open_spanned_zip
+from .spanned_zip import MissingVolumeError, open_spanned_zip
 from .views import canonical_image
 
 SIZE = 256
@@ -51,27 +51,27 @@ def estimate_quality(image):
     return best[1]
 
 
-def real_sample(data):
-    """Return (256x256 RGB crop, jpeg settings) or None if the image is unusable."""
+def real_sample(data, size=SIZE):
+    """Return (size x size RGB crop, jpeg settings) or None if the image is unusable."""
     with Image.open(io.BytesIO(data)) as image:
         if image.format != "JPEG" or image.mode != "RGB":
             return None
         sampling = JpegImagePlugin.get_sampling(image)
-        if sampling not in SUBSAMPLING or min(image.size) < SIZE:
+        if sampling not in SUBSAMPLING or min(image.size) < size:
             return None
         settings = {"quality": estimate_quality(image), "subsampling": sampling}
         image.load()
         width, height = image.size
         # Offsets are multiples of 8 so JPEG blocks start at the crop origin.
-        x = ((width - SIZE) // 2) // 8 * 8
-        y = ((height - SIZE) // 2) // 8 * 8
-        return image.crop((x, y, x + SIZE, y + SIZE)).copy(), settings
+        x = ((width - size) // 2) // 8 * 8
+        y = ((height - size) // 2) // 8 * 8
+        return image.crop((x, y, x + size, y + size)).copy(), settings
 
 
-def generated_sample(data, settings):
+def generated_sample(data, settings, size=SIZE):
     with Image.open(io.BytesIO(data)) as image:
         image = canonical_image(image)
-    if image.size != (SIZE, SIZE):
+    if image.size != (size, size):
         return None
     buffer = io.BytesIO()
     image.save(buffer, "JPEG", **settings)
@@ -80,17 +80,28 @@ def generated_sample(data, settings):
         return compressed.convert("RGB")
 
 
-def build_genimage_manifest(archive_path, output_dir, counts, seed=0, family=None):
+def build_genimage_manifest(
+    archive_path,
+    output_dir,
+    counts,
+    seed=0,
+    family=None,
+    size=SIZE,
+    output_size=None,
+    allow_missing_volumes=False,
+):
     """counts: {split: (source_folder, images_per_class)}; source_folder is train/val.
 
-    Splits drawn from the same source folder never share an image.
+    Splits drawn from the same source folder never share an image. `size` is the
+    generator's native resolution and the real-image crop size. `output_size`
+    optionally resizes both classes identically (bicubic) after compression.
     """
     output_dir = Path(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Output directory is not empty: {output_dir}")
     rng = random.Random(seed)
     records, stats = [], Counter()
-    with open_spanned_zip(archive_path) as archive:
+    with open_spanned_zip(archive_path, allow_missing_volumes) as archive:
         members = {}
         for info in archive.infolist():
             parts = info.filename.split("/")
@@ -113,9 +124,13 @@ def build_genimage_manifest(archive_path, output_dir, counts, seed=0, family=Non
                         raise ValueError(f"Not enough usable {source}/{kind} images")
                     info = pool[cursors[source, kind]]
                     cursors[source, kind] += 1
-                    data = archive.read(info)
+                    try:
+                        data = archive.read(info)
+                    except MissingVolumeError:
+                        stats[f"missing_volume_{split}_{kind}"] += 1
+                        continue
                     if label == 0:
-                        result = real_sample(data)
+                        result = real_sample(data, size)
                         if result is None:
                             stats[f"skipped_{split}_real"] += 1
                             continue
@@ -123,10 +138,14 @@ def build_genimage_manifest(archive_path, output_dir, counts, seed=0, family=Non
                         settings_pool.append(settings)
                     else:
                         settings = rng.choice(settings_pool)
-                        image = generated_sample(data, settings)
+                        image = generated_sample(data, settings, size)
                         if image is None:
                             stats[f"skipped_{split}_generated"] += 1
                             continue
+                    if output_size and output_size != size:
+                        image = image.resize(
+                            (output_size, output_size), Image.Resampling.BICUBIC
+                        )
                     stem = Path(info.filename).stem
                     relative = Path(split) / kind / f"{stem}.png"
                     (output_dir / relative).parent.mkdir(parents=True, exist_ok=True)
@@ -152,6 +171,8 @@ def build_genimage_manifest(archive_path, output_dir, counts, seed=0, family=Non
         "archive": str(archive_path),
         "seed": seed,
         "counts": {k: list(v) for k, v in counts.items()},
+        "size": size,
+        "output_size": output_size or size,
         "stats": dict(stats),
         "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
     }

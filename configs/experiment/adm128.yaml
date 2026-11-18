@@ -1,0 +1,11 @@
+# @package _global_
+# ADM at 128x128 native pixels (center crops of data/genimage_adm, no resampling).
+# Matches the native BigGAN resolution for a scale-matched cross-generator test.
+defaults:
+  - adm
+
+data:
+  manifest: data/genimage_adm_128/samples.jsonl
+views:
+  global_size: 128
+  local_size: 128

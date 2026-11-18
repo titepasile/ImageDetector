@@ -193,6 +193,18 @@ python -m scripts.eval experiment=adm checkpoint=outputs/adm-baseline/best.pt hy
 Verbleibender Unterschied: Reale Bilder können mit anderen Quantisierungstabellen
 als den IJG-Standardtabellen von Pillow kodiert sein.
 
+Für einen Test auf einem anderen Generator mit kleinerer nativer Auflösung (BigGAN:
+128×128) `--size 128` angeben; reale Bilder werden dann auf 128×128 zugeschnitten.
+`--output-size` skaliert beide Klassen identisch. Fehlen einzelne Split-Volumes,
+überspringt `--allow-missing-volumes` die darin gespeicherten Bilder. Die Modelle
+reagieren stark auf Skalierung: Für einen fairen Vergleich mit derselben nativen
+Auflösung trainieren (`experiment=adm128`, 128er-Ausschnitte ohne Resampling).
+
+```bash
+python -m scripts.prepare_genimage C:/data/BigGAN/imagenet_ai_0419_biggan.zip data/genimage_biggan_128 --train 0 --val 0 --test 1000 --size 128 --allow-missing-volumes
+python -m scripts.eval experiment=adm128 checkpoint=outputs/adm128-baseline/best.pt eval_manifest=data/genimage_biggan_128/samples.jsonl eval_split=test_id
+```
+
 ### Echte Daten anschließen
 
 `data/samples.jsonl` enthält einen JSON-Datensatz pro Zeile. Pfade beziehen sich auf
