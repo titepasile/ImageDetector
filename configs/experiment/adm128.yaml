@@ -6,6 +6,4 @@ defaults:
 
 data:
   manifest: data/genimage_adm_128/samples.jsonl
-views:
-  global_size: 128
-  local_size: 128
+# Uses the default 128x128 views, so the global view is not resampled here.

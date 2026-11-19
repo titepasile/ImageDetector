@@ -19,8 +19,8 @@ eval_split: null
 eval_manifest: null
 
 views:
-  global_size: 224
-  local_size: 256
+  global_size: 128  # Whole image, letterboxed and resized to this square size.
+  local_size: 128  # Native-pixel crops; images smaller than this use the global head.
   patches: 1
 
 loader:

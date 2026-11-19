@@ -132,8 +132,9 @@ legt einen bekannten Ausgabeort fest; beim nächsten Lauf einen neuen Namen verw
 | `spectral=flow` | Zusätzliche Fehlermerkmale eines separat vortrainierten Conditional-Flow-Matching-Modells. |
 
 Die Encoder verwenden explizite `nn.Module`-Klassen und den vorhandenen
-Residualblock. Der globale View erhält ein Letterboxing auf 224×224; lokale
-256×256-Patches werden ohne Skalierung ausgeschnitten. `views.patches=4` aktiviert
+Residualblock. Der globale View erhält ein Letterboxing auf 128×128; lokale
+128×128-Patches werden ohne Skalierung ausgeschnitten (`views.global_size`,
+`views.local_size`). `views.patches=4` aktiviert
 vier Patches. Training verwendet reproduzierbare Zufallspositionen, Evaluation
 das Zentrum beziehungsweise die vier Ecken. Doppelte Positionen werden maskiert.
 Ist ein Bild zu klein, verwendet der Detektor den mittrainierten globalen Kopf.
@@ -237,8 +238,8 @@ python -m scripts.train model=dual_resolution data.manifest=/data/samples.jsonl 
 ```
 
 Die Bilder werden direkt in ihrer vorhandenen Auflösung gelesen, EXIF-orientiert
-und nach RGB konvertiert; Transparenz wird auf Weiß gelegt. Bereits auf 128×128
-verkleinerte Daten liefern keine nativen 256×256-Patches. Der ältere Tar-Konverter
+und nach RGB konvertiert; Transparenz wird auf Weiß gelegt. Bereits verkleinerte
+Daten (z. B. aus dem Tar-Konverter) liefern keine nativen Patches mehr. Der ältere Tar-Konverter
 unten bleibt für bestehende Anwendungen verfügbar; die neue Trainingspipeline
 verwendet native Bilddateien und das explizite Manifest.
 
