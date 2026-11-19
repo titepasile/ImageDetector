@@ -149,6 +149,8 @@ def summarise_root(root, val_name="val", samples=1000):
         val_path = run / val_name / "predictions.jsonl"
         val_records = load_predictions(val_path) if val_path.exists() else None
         for test in sorted(p for p in run.iterdir() if p.is_dir() and p.name != val_name):
+            if not (test / "predictions.jsonl").exists():
+                continue  # Diagnostics folders (occlusion, spectra) are not test sets.
             records = load_predictions(test / "predictions.jsonl")
             if len({r["target"] for r in records}) < 2:
                 continue

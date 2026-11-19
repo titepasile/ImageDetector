@@ -51,7 +51,9 @@ def spectra(datasets, output_dir, per_class=500):
             label = "ai" if record["label"] else "real"
             sums.setdefault(label, []).append(power)
         mean = {label: np.mean(values, axis=0) for label, values in sums.items()}
-        ratio = np.log10(mean["ai"]) - np.log10(mean["real"])
+        # The zero-frequency bin is ~0 after removing the mean; eps avoids NaN there.
+        ratio = np.log10(mean["ai"] + 1e-12) - np.log10(mean["real"] + 1e-12)
+        ratio[ratio.shape[0] // 2, ratio.shape[1] // 2] = np.median(ratio)
         size = ratio.shape[0]
         # Peak-to-median ratio of the AI/real log ratio: high values mean
         # isolated periodic peaks (e.g. upsampling grids).
@@ -69,15 +71,18 @@ def spectra(datasets, output_dir, per_class=500):
     figure, axes = plt.subplots(len(figure_rows), 3, figsize=(11, 3.6 * len(figure_rows)))
     axes = np.atleast_2d(axes)
     for row, (name, mean, ratio) in zip(axes, figure_rows):
+        # Robust colour limits: the zero-frequency bin (removed mean) is extreme.
         for axis, (title, values) in zip(
-            row[:2], (("real", np.log10(mean["real"])), ("ai", np.log10(mean["ai"])))
+            row[:2], (("real", np.log10(mean["real"] + 1e-12)), ("ai", np.log10(mean["ai"] + 1e-12)))
         ):
-            image = axis.imshow(values, cmap="magma")
+            low, high = np.percentile(values, [1, 99.9])
+            image = axis.imshow(values, cmap="magma", vmin=low, vmax=high)
             axis.set_title(f"{name}: {title} (log power)")
             figure.colorbar(image, ax=axis, fraction=0.046)
-        limit = np.abs(ratio).max()
-        image = row[2].imshow(ratio, cmap="coolwarm", vmin=-limit, vmax=limit)
-        row[2].set_title(f"{name}: log10 AI / real")
+        centred = ratio - np.median(ratio)
+        limit = np.percentile(np.abs(centred), 99.5)
+        image = row[2].imshow(centred, cmap="coolwarm", vmin=-limit, vmax=limit)
+        row[2].set_title(f"{name}: log10 AI / real (minus median)")
         figure.colorbar(image, ax=row[2], fraction=0.046)
         for axis in row:
             axis.set_xticks([])
