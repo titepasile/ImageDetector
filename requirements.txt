@@ -10,3 +10,4 @@ mlflow==3.18.0
 scikit-learn==1.9.1
 PyYAML==6.0.3
 python-dotenv==1.2.4
+matplotlib==3.11.2

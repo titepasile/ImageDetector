@@ -61,19 +61,24 @@ class SpannedFile(io.RawIOBase):
     volume raises MissingVolumeError.
     """
 
+    # Placeholder size for missing volumes when no sibling reveals the real one.
+    # Reads inside that range raise; only the final volume's members stay readable.
+    UNKNOWN_VOLUME_SIZE = 1 << 40
+
     def __init__(self, paths):
         super().__init__()
         self.paths = [Path(p) if p is not None else None for p in paths]
-        present = [p.stat().st_size for p in self.paths[:-1] if p is not None]
-        if None in self.paths[:-1] and len(set(present)) != 1:
+        self.handles = [None] * len(self.paths)
+        present = {p.stat().st_size for p in self.paths[:-1] if p is not None}
+        if len(present) > 1 and None in self.paths[:-1]:
             raise ValueError("Cannot infer the size of missing split volumes")
+        missing_size = present.pop() if present else self.UNKNOWN_VOLUME_SIZE
         self.offsets, total = [], 0
         for path in self.paths:
             self.offsets.append(total)
-            total += path.stat().st_size if path is not None else present[0]
+            total += path.stat().st_size if path is not None else missing_size
         self.size = total
         self.position = 0
-        self.handles = [None] * len(self.paths)
         self.overlay = {}  # absolute offset -> bytes
 
     def readable(self):

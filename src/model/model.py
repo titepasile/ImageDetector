@@ -117,6 +117,50 @@ class DualResolutionDetector(nn.Module):
         }
 
 
+class LocalOnlyDetector(nn.Module):
+    """Ablation: only native-pixel crops, no whole-image context.
+
+    Images without a valid crop get zero logits (score 0.5) and are reported
+    through local_valid, so evaluation can show their coverage separately.
+    """
+
+    def __init__(self, local_encoder, embedding_dim, dropout, reference=None):
+        super().__init__()
+        self.local_encoder = local_encoder
+        self.reference = reference
+        evidence_dim = reference.feature_dim if reference is not None else 0
+        self.projection = DualResolutionDetector._projection(
+            local_encoder.feature_dim + evidence_dim, embedding_dim
+        )
+        self.head = ClassificationHead(embedding_dim, embedding_dim, dropout)
+        if reference is not None:
+            reference.requires_grad_(False)
+        self.train()
+
+    def train(self, mode=True):
+        super().train(mode)
+        if self.reference is not None:
+            self.reference.eval()
+        return self
+
+    def forward(self, batch):
+        mask = batch["local_mask"]
+        valid = mask.any(dim=1)
+        logits = batch["local"].new_zeros((len(mask), 2))
+        if mask.any():
+            patches = batch["local"][mask]
+            encoded = self.local_encoder(patches)
+            if self.reference is not None:
+                with torch.no_grad():
+                    evidence = self.reference.evidence(patches)
+                encoded = torch.cat([encoded, evidence], dim=1)
+            features = encoded.new_zeros((*mask.shape, self.head.layers[0].in_features))
+            features[mask] = self.projection(encoded)
+            features = features.sum(dim=1) / mask.sum(dim=1, keepdim=True).clamp_min(1)
+            logits = torch.where(valid[:, None], self.head(features), logits)
+        return {"logits": logits, "local_valid": valid}
+
+
 def build_model(config, download_weights=True):
     if config.model.name == "baseline":
         encoder = build_encoder(config.model.encoder, download_weights)
@@ -132,6 +176,16 @@ def build_model(config, download_weights=True):
             config.model.dropout,
             config.model.freeze_global,
             config.model.freeze_local,
+            reference,
+        )
+    if config.model.name == "local_only":
+        reference = None
+        if config.spectral.objective != "none":
+            reference = build_reference(config.spectral)
+        return LocalOnlyDetector(
+            build_encoder(config.model.local_encoder, download_weights),
+            config.model.embedding_dim,
+            config.model.dropout,
             reference,
         )
     raise ValueError(f"Unknown model: {config.model.name}")

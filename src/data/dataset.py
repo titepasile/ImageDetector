@@ -7,11 +7,13 @@ directory. No split or label is guessed from a filename.
 
 from collections import Counter
 import hashlib
+import io
 import json
 from pathlib import Path
+import random
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 from torch.utils.data import Dataset
 
 from .views import ImageViews, canonical_image
@@ -97,14 +99,35 @@ def group_weights(records):
     return weights
 
 
+def augment_image(image, settings, seed_text):
+    """Blur and JPEG re-compression (Wang et al., 2020), each with probability p.
+
+    Deterministic for a given seed text, so worker count does not change results.
+    """
+    rng = random.Random(int.from_bytes(hashlib.sha256(seed_text.encode()).digest()[:8]))
+    if rng.random() < settings.probability:
+        image = image.filter(ImageFilter.GaussianBlur(rng.uniform(*settings.blur_sigma)))
+    if rng.random() < settings.probability:
+        buffer = io.BytesIO()
+        image.save(buffer, "JPEG", quality=rng.randint(*settings.jpeg_quality))
+        buffer.seek(0)
+        with Image.open(buffer) as compressed:
+            image = compressed.convert("RGB")
+    return image
+
+
 class DetectionDataset(Dataset):
-    def __init__(self, records, views, synthetic=False, image_size=320):
+    def __init__(
+        self, records, views, synthetic=False, image_size=320, augment=None
+    ):
         if not records:
             raise ValueError("The requested dataset split contains no samples")
         self.records = records
         self.views = views
         self.synthetic = synthetic
         self.image_size = image_size
+        enabled = augment is not None and augment.probability > 0
+        self.augment = augment if enabled and views.training else None
         self.weights = (
             group_weights(records) if views.training else [1.0] * len(records)
         )
@@ -133,6 +156,9 @@ class DetectionDataset(Dataset):
         else:
             with Image.open(record["path"]) as original:
                 image = canonical_image(original)
+        if self.augment is not None:
+            seed_text = f"{self.views.seed}:{self.views.epoch}:{record['sample_id']}:augment"
+            image = augment_image(image, self.augment, seed_text)
         batch = self.views(image, record["sample_id"])
         batch.update(
             target=record["label"],
@@ -208,5 +234,6 @@ def build_datasets(config, real_only=False, evaluation_split=None):
             views,
             config.data.name == "synthetic",
             config.data.get("image_size", 320),
+            config.get("augment"),
         )
     return datasets, fingerprint

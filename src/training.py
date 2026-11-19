@@ -1,6 +1,7 @@
 """Explicit training loops for classification and real-only spectral pretraining."""
 
 import json
+import math
 import os
 from pathlib import Path
 
@@ -49,7 +50,7 @@ def make_loader(dataset, config, epoch=0, training=False):
 def detection_loss(output, batch, config):
     target = batch["target"]
     per_image = F.cross_entropy(output["logits"], target, reduction="none")
-    if "local_valid" in output:
+    if "global_logits" in output:
         valid = output["local_valid"].float()
         per_image += (
             valid
@@ -62,6 +63,16 @@ def detection_loss(output, batch, config):
             * F.cross_entropy(output["local_logits"], target, reduction="none")
         )
     return (per_image * batch["loss_weight"].float()).mean()
+
+
+def learning_rate(config, epoch):
+    """Per-epoch learning rate; a pure function of the epoch, so resume stays exact."""
+    schedule = config.optimizer.get("schedule", "constant")
+    if schedule == "constant":
+        return config.optimizer.lr
+    if schedule == "cosine":
+        return config.optimizer.lr * 0.5 * (1 + math.cos(math.pi * epoch / config.epochs))
+    raise ValueError(f"Unknown learning-rate schedule: {schedule}")
 
 
 def train_detector_epoch(model, loader, optimizer, config, device):
@@ -238,6 +249,8 @@ def run_training(config, directory):
         mlflow.set_tag("device", str(device))
         history = directory / "metrics.jsonl"
         for epoch in range(start_epoch, config.epochs):
+            for group in optimizer.param_groups:
+                group["lr"] = learning_rate(config, epoch)
             train_loader = make_loader(
                 datasets[config.data.train_split], config, epoch, True
             )
@@ -264,6 +277,7 @@ def run_training(config, directory):
             if not torch.isfinite(torch.tensor(value)):
                 raise FloatingPointError("Validation selection metric is not finite")
             metrics = {f"train/{k}": v for k, v in training_metrics.items()}
+            metrics["train/lr"] = optimizer.param_groups[0]["lr"]
             metrics.update({f"val/{k}": v for k, v in validation_metrics.items()})
             log_metrics(metrics, step=epoch)
             with history.open("a") as stream:

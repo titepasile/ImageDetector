@@ -1,11 +1,17 @@
 """Classification metrics and predictions shared by validation and the eval CLI."""
 
 import numpy as np
-from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.metrics import average_precision_score, roc_auc_score, roc_curve
 import torch
 from torch.nn import functional as F
 
 from .runtime import move_batch
+
+
+def tpr_at_fpr(targets, scores, max_fpr=0.05):
+    """Highest detection rate whose false-positive rate stays at or below max_fpr."""
+    fpr, tpr, _ = roc_curve(targets, scores)
+    return float(tpr[fpr <= max_fpr].max())
 
 
 def classification_metrics(records):
@@ -21,11 +27,13 @@ def classification_metrics(records):
         "balanced_accuracy": None,
         "fpr": float(predicted[real].mean()) if real.any() else None,
         "tpr": float(predicted[generated].mean()) if generated.any() else None,
+        "tpr_at_fpr_5": None,
     }
     if real.any() and generated.any():
         metrics["auroc"] = roc_auc_score(targets, scores)
         metrics["average_precision"] = average_precision_score(targets, scores)
         metrics["balanced_accuracy"] = (1 - metrics["fpr"] + metrics["tpr"]) / 2
+        metrics["tpr_at_fpr_5"] = tpr_at_fpr(targets, scores)
     families = sorted({r["generator_family"] for r in records if r["target"] == 1})
     aucs = []
     for family in families:

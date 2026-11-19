@@ -1,0 +1,9 @@
+# Ablation of dual_resolution: the native-crop branch alone, no global view.
+name: local_only
+embedding_dim: 128
+dropout: 0.1
+local_encoder:
+  name: resnet
+  base_channels: 16
+  blocks: [1, 1, 1]
+  preserve_detail: true

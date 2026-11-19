@@ -105,7 +105,9 @@ def config_signature(config):
             "loss",
             "loader",
             "selection",
+            "augment",
         )
+        if key in data
     }
 
 
