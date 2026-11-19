@@ -95,11 +95,11 @@ def apply_operation(image, operation, seed_text):
 
 
 def perturb_manifest(manifest, split, output_dir, operations):
-    """Write perturbed copies of one split and a manifest that references them."""
+    """Write perturbed copies of one split ("all" for every split) and a manifest."""
     output_dir = Path(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Output directory is not empty: {output_dir}")
-    records = [r for r in read_manifest(manifest) if r["split"] == split]
+    records = [r for r in read_manifest(manifest) if split == "all" or r["split"] == split]
     if not records:
         raise ValueError(f"Split {split!r} is empty in {manifest}")
     lines = []
@@ -109,7 +109,7 @@ def perturb_manifest(manifest, split, output_dir, operations):
         for operation in operations:
             image = apply_operation(image, operation, f"{record['sample_id']}:{operation}")
         kind = "ai" if record["label"] else "nature"
-        relative = Path(split) / kind / f"{index:06d}.png"
+        relative = Path(record["split"]) / kind / f"{index:06d}.png"
         (output_dir / relative).parent.mkdir(parents=True, exist_ok=True)
         image.save(output_dir / relative, "PNG")
         new = {k: v for k, v in record.items() if k not in ("path", "sha256", "sample_id")}
