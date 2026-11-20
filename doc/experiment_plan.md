@@ -1,6 +1,6 @@
 # Experiment plan
 
-Status: running since 2026-11-19 on the `test` branch (CPU only, 16 cores).
+Status: started 2026-11-19 on the `test` branch (CPU only, 16 cores); interrupted 2026-11-20 during experiment 6, see the status table in the results.
 Runner: [`scripts/run_experiment_plan.sh`](../scripts/run_experiment_plan.sh).
 Results are collected in [`experiment_results.md`](experiment_results.md) once runs finish.
 

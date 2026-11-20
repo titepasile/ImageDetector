@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 import random
 
-from PIL import Image, JpegImagePlugin
+from PIL import Image, JpegImagePlugin, UnidentifiedImageError
 
 from .spanned_zip import MissingVolumeError, open_spanned_zip
 from .views import canonical_image
@@ -53,6 +53,13 @@ def estimate_quality(image):
 
 def real_sample(data, size=SIZE):
     """Return (size x size RGB crop, jpeg settings) or None if the image is unusable."""
+    try:
+        return _real_sample(data, size)
+    except (UnidentifiedImageError, OSError):
+        return None
+
+
+def _real_sample(data, size):
     with Image.open(io.BytesIO(data)) as image:
         if image.format != "JPEG" or image.mode != "RGB":
             return None
@@ -69,8 +76,11 @@ def real_sample(data, size=SIZE):
 
 
 def generated_sample(data, settings, size=SIZE):
-    with Image.open(io.BytesIO(data)) as image:
-        image = canonical_image(image)
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            image = canonical_image(image)
+    except (UnidentifiedImageError, OSError):
+        return None  # A few archive members are not decodable images.
     if image.size != (size, size):
         return None
     buffer = io.BytesIO()
@@ -101,6 +111,7 @@ def build_genimage_manifest(
         raise FileExistsError(f"Output directory is not empty: {output_dir}")
     rng = random.Random(seed)
     records, stats = [], Counter()
+    written_digests = set()  # Some archive images are byte-identical duplicates.
     with open_spanned_zip(archive_path, allow_missing_volumes) as archive:
         members = {}
         for info in archive.infolist():
@@ -135,7 +146,6 @@ def build_genimage_manifest(
                             stats[f"skipped_{split}_real"] += 1
                             continue
                         image, settings = result
-                        settings_pool.append(settings)
                     else:
                         settings = rng.choice(settings_pool)
                         image = generated_sample(data, settings, size)
@@ -146,10 +156,19 @@ def build_genimage_manifest(
                         image = image.resize(
                             (output_size, output_size), Image.Resampling.BICUBIC
                         )
+                    buffer = io.BytesIO()
+                    image.save(buffer, "PNG")
+                    digest = hashlib.sha256(buffer.getvalue()).hexdigest()
+                    if digest in written_digests:
+                        stats[f"skipped_{split}_{kind}_duplicate"] += 1
+                        continue
+                    written_digests.add(digest)
+                    if label == 0:
+                        settings_pool.append(settings)
                     stem = Path(info.filename).stem
                     relative = Path(split) / kind / f"{stem}.png"
                     (output_dir / relative).parent.mkdir(parents=True, exist_ok=True)
-                    image.save(output_dir / relative, "PNG")
+                    (output_dir / relative).write_bytes(buffer.getvalue())
                     record = {
                         "path": relative.as_posix(),
                         "label": label,

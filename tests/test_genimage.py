@@ -8,7 +8,12 @@ import zipfile
 from PIL import Image
 
 from src.data.dataset import read_manifest
-from src.data.genimage import build_genimage_manifest, estimate_quality
+from src.data.genimage import (
+    build_genimage_manifest,
+    estimate_quality,
+    generated_sample,
+    real_sample,
+)
 from src.data.spanned_zip import (
     MissingVolumeError,
     SpannedFile,
@@ -137,6 +142,33 @@ class GenImageBuilderTests(unittest.TestCase):
         for quality in (50, 75, 96):
             with Image.open(io.BytesIO(encoded(image, "JPEG", quality=quality))) as jpeg:
                 self.assertEqual(estimate_quality(jpeg), quality)
+
+    def test_duplicate_images_are_written_once(self):
+        archive = self.root / "imagenet_ai_0508_toy.zip"
+        duplicate = encoded(Image.effect_noise((256, 256), 60).convert("RGB"), "PNG")
+        with zipfile.ZipFile(archive, "w") as output:
+            for index in range(3):
+                real = Image.effect_noise((256, 256), 60).convert("RGB")
+                output.writestr(
+                    f"imagenet_ai_0508_toy/train/nature/n{index}.JPEG",
+                    encoded(real, "JPEG", quality=90),
+                )
+            output.writestr("imagenet_ai_0508_toy/train/ai/a.PNG", duplicate)
+            output.writestr("imagenet_ai_0508_toy/train/ai/b.PNG", duplicate)
+            other = Image.effect_noise((256, 256), 60).convert("RGB")
+            output.writestr("imagenet_ai_0508_toy/train/ai/c.PNG", encoded(other, "PNG"))
+        build_genimage_manifest(archive, self.root / "two", {"train": ("train", 2)})
+        records = read_manifest(self.root / "two" / "samples.jsonl")
+        self.assertEqual(len({r["sha256"] for r in records}), 4)
+        # Only two distinct generated images exist, so three cannot be built.
+        with self.assertRaisesRegex(ValueError, "Not enough usable train/ai"):
+            build_genimage_manifest(archive, self.root / "three", {"train": ("train", 3)})
+
+    def test_undecodable_members_are_skipped(self):
+        settings = {"quality": 90, "subsampling": 2}
+        for data in (b"", b"not an image", encoded(Image.new("RGB", (64, 64)), "PNG")[:40]):
+            self.assertIsNone(real_sample(data, 32))
+            self.assertIsNone(generated_sample(data, settings, 32))
 
 
 if __name__ == "__main__":
